@@ -19,8 +19,9 @@ bucks = 628341
 philly = 1581000
 S_default = 9700000
 #delaware + chester + montgomery + bucks + philly
-known_infections = 58 # update daily
-known_cases = 20 # update daily
+known_infections = 73 # update daily
+cases_percent = 25
+known_cases = int(known_infections * (  cases_percent / 100 ))
 
 a = """Mi változott az eredeti modellhez képest?
  - Esetszám duplázodás az eredeti modell szerint 6-ról fel lett emelve 7-re ami jobban közelít az általam olvasott statisztikákhoz.
@@ -34,7 +35,7 @@ a = """Mi változott az eredeti modellhez képest?
 current_hosp = st.sidebar.number_input(
     "Jelenleg valóban kórházban ápolásra szoruló ferőzöttek", value=known_cases, step=1, format="%i"
 )
-st.sidebar.markdown("""Becsült érték, az ismert {known_infections} eset 34%-a. Amennyiben pontos adat rendelkezésre áll a fenti érték módosítandó""".format(known_infections=known_infections))
+st.sidebar.markdown("""Becsült érték, az ismert {known_infections} eset {cases_percent}%-a. Amennyiben pontos adat rendelkezésre áll a fenti érték módosítandó""".format(known_infections=known_infections, cases_percent=cases_percent))
 
 doubling_time = st.sidebar.number_input(
     "Esetszám duplázódás (napok)", value=7, step=1, format="%i"
