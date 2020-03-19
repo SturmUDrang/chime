@@ -17,49 +17,60 @@ chester = 519293
 montgomery = 826075
 bucks = 628341
 philly = 1581000
-S_default = delaware + chester + montgomery + bucks + philly
-known_infections = 91 # update daily
-known_cases = 4 # update daily
+S_default = 9700000
+#delaware + chester + montgomery + bucks + philly
+known_infections = 58 # update daily
+known_cases = 20 # update daily
+
+a = """Mi változott az eredeti modellhez képest?
+ - Esetszám duplázodás az eredeti modell szerint 6-ról fel lett emelve 7-re ami jobban közelít az általam olvasott statisztikákhoz.
+ - Az amerikai adatokkal ellentétben a modell a teljes ország egészségügyi rendszerének terhelését mutatja, nem csak egy kórházét.
+ - A lakosság száma módosítva lett
+
+"""
+
 
 # Widgets
 current_hosp = st.sidebar.number_input(
-    "Currently Hospitalized COVID-19 Patients", value=known_cases, step=1, format="%i"
+    "Jelenleg valóban kórházban ápolásra szoruló ferőzöttek", value=known_cases, step=1, format="%i"
 )
+st.sidebar.markdown("""Becsült érték, az ismert {known_infections} eset 34%-a. Amennyiben pontos adat rendelkezésre áll a fenti érték módosítandó""".format(known_infections=known_infections))
 
 doubling_time = st.sidebar.number_input(
-    "Doubling time before social distancing (days)", value=6, step=1, format="%i"
+    "Esetszám duplázódás (napok)", value=7, step=1, format="%i"
 )
 
 relative_contact_rate = st.sidebar.number_input(
-    "Social distancing (% reduction in social contact)", 0, 100, value=0, step=5, format="%i"
+    "Társadalmi érintekzések csökkenése (%)", 0, 100, value=0, step=5, format="%i"
 )/100.0
 
 hosp_rate = (
-    st.sidebar.number_input("Hospitalization %(total infections)", 0.0, 100.0, value=5.0, step=1.0, format="%f")
+    st.sidebar.number_input("Kórházi ellátást igényelő beteg (az összes fertőzés %-ban)", 0.0, 100.0, value=5.0, step=1.0, format="%f")
     / 100.0
 )
 icu_rate = (
-    st.sidebar.number_input("ICU %(total infections)", 0.0, 100.0, value=2.0, step=1.0, format="%f") / 100.0
+    st.sidebar.number_input("Intenzív osztályon kezelt (az összes fertőzés %-ban)", 0.0, 100.0, value=2.0, step=1.0, format="%f") / 100.0
 )
 vent_rate = (
-    st.sidebar.number_input("Ventilated %(total infections)", 0.0, 100.0, value=1.0, step=1.0, format="%f")
+    st.sidebar.number_input("Gép által lélelgeztetett (az összes fertőzés %-ban)", 0.0, 100.0, value=1.0, step=1.0, format="%f")
     / 100.0
 )
-hosp_los = st.sidebar.number_input("Hospital Length of Stay", value=7, step=1, format="%i")
-icu_los = st.sidebar.number_input("ICU Length of Stay", value=9, step=1, format="%i")
-vent_los = st.sidebar.number_input("Vent Length of Stay", value=10, step=1, format="%i")
-Penn_market_share = (
-    st.sidebar.number_input(
-        "Hospital Market Share (%)", 0.0, 100.0, value=15.0, step=1.0, format="%f"
-    )
-    / 100.0
-)
+hosp_los = st.sidebar.number_input("Kórházi kezelés hossza (nap)", value=7, step=1, format="%i")
+icu_los = st.sidebar.number_input("Intenzív kezelés hossza (nap)", value=9, step=1, format="%i")
+vent_los = st.sidebar.number_input("Lélegeztetés hossza (nap)", value=10, step=1, format="%i")
+Penn_market_share = 1
+# (
+#    st.sidebar.number_input(
+#        "Ágyak részesedése (%)", 0.0, 100.0, value=15.0, step=1.0, format="%f"
+#    )
+#    / 100.0
+#)
 S = st.sidebar.number_input(
-    "Regional Population", value=S_default, step=100000, format="%i"
+    "Lakosság", value=S_default, step=100000, format="%i"
 )
 
 initial_infections = st.sidebar.number_input(
-    "Currently Known Regional Infections (only used to compute detection rate - does not change projections)", value=known_infections, step=10, format="%i"
+    "Jelenleg ismert fertőzöttek (nem módosít az előrejelzéseken, csak a felfedezési arány számolásához szükséges)", value=known_infections, step=10, format="%i"
 )
 
 total_infections = current_hosp / Penn_market_share / hosp_rate
@@ -83,25 +94,23 @@ r_naught = r_t / (1-relative_contact_rate)
 doubling_time_t = 1/np.log2(beta*S - gamma +1) # doubling time after distancing
 
 def head():
-    st.title("COVID-19 Hospital Impact Model for Epidemics")
+    st.title("Koronavírusfertőzöttek ellátásához szükséges kórházi ágyak száma Magyarországon")
     st.markdown(
-        """*This tool was developed by the [Predictive Healthcare team](http://predictivehealthcare.pennmedicine.org/) at
-    Penn Medicine. For questions and comments please see our
-    [contact page](http://predictivehealthcare.pennmedicine.org/contact/). Code can be found on [Github](https://github.com/pennsignals/chime).
-    Join our [Slack channel](https://codeforphilly.org/chat?channel=covid19-chime-penn) if you would like to get involved!*""")
+        """A szoftver és a modell eredeti verzióját a [Predictive Healthcare team](http://predictivehealthcare.pennmedicine.org/) a Pennsylvaniai Egyetem orvosi központjában fejlesztette. 
+Az eredeti fejlesztőcsapat elérhetősge: (http://predictivehealthcare.pennmedicine.org/contact/). 
+A magyar valtozat forráskódja a [GitHub](https://github.com/SturmUDrang/chime)-on található.
+
+A magyar változatott fordította és a modell sarokszámait testreszabta Lőrincze Tamás.""")
 
 
     st.markdown(
-        """The estimated number of currently infected individuals is **{total_infections:.0f}**. The **{initial_infections}**
-    confirmed cases in the region imply a **{detection_prob:.0%}** rate of detection. This is based on current inputs for
-    Hospitalizations (**{current_hosp}**), Hospitalization rate (**{hosp_rate:.0%}**), Region size (**{S}**),
-    and Hospital market share (**{Penn_market_share:.0%}**).
+        """A modell által becsült valós fertőzések száma **{total_infections:.0f}**. A(z) **{initial_infections}**
+    hivatalosan jelentett fertőzés **{detection_prob:.0%}** észlelési arányt mutat. Az érték a jelenleg kórházban ápoltak száma (**{current_hosp}**), a kózházi ápolást igénylő betegek százalékának (**{hosp_rate:.0%}**) és a lakosság számának (**{S}**) függvénye, becslés.
 
-An initial doubling time of **{doubling_time}** days and a recovery time of **{recovery_days}** days imply an $R_0$ of
-**{r_naught:.2f}**.
+Az esetszám duplázódás sebességéből következik, hogy minden fertőzött átlagban  $R_0$ =
+**{r_naught:.2f}** további embernek adja át a betegséget. 
 
-**Mitigation**: A **{relative_contact_rate:.0%}** reduction in social contact after the onset of the
-outbreak reduces the doubling time to **{doubling_time_t:.1f}** days, implying an effective $R_t$ of **${r_t:.2f}$**.
+*Társadalmi érintekzések csökkenése* (amennyiben be lett állítva): **{relative_contact_rate:.0%}**-os csökkenés a társadalmi érintkezésekben az esetszám duplázódást **{doubling_time_t:.1f}** napra növeli, azaz az egy fertőzött által továbbfertőzőtt egyének száma: $R_t$ = **${r_t:.2f}** 
 """.format(
         total_infections=total_infections,
         initial_infections=initial_infections,
@@ -123,103 +132,13 @@ outbreak reduces the doubling time to **{doubling_time_t:.1f}** days, implying a
 
 head()
 
-def show_more_info_about_this_tool():
-    """a lot of streamlit writing to screen."""
-    st.subheader(
-        "[Discrete-time SIR modeling](https://mathworld.wolfram.com/SIRModel.html) of infections/recovery"
-    )
-    st.markdown(
-        """The model consists of individuals who are either _Susceptible_ ($S$), _Infected_ ($I$), or _Recovered_ ($R$).
-
-The epidemic proceeds via a growth and decline process. This is the core model of infectious disease spread and has been in use in epidemiology for many years."""
-    )
-    st.markdown("""The dynamics are given by the following 3 equations.""")
-
-    st.latex("S_{t+1} = (-\\beta S_t I_t) + S_t")
-    st.latex("I_{t+1} = (\\beta S_t I_t - \\gamma I_t) + I_t")
-    st.latex("R_{t+1} = (\\gamma I_t) + R_t")
-
-    st.markdown(
-        """To project the expected impact to Penn Medicine, we estimate the terms of the model.
-
-To do this, we use a combination of estimates from other locations, informed estimates based on logical reasoning, and best guesses from the American Hospital Association.
 
 
-### Parameters
+st.markdown("""A modellról részletes információt az [eredeti oldal](http://penn-chime.phl.io/) tartalmaz""")
 
-The model's parameters, $\\beta$ and $\\gamma$, determine the virulence of the epidemic.
+st.markdown("""A bal oldali menüt kinyitva lehet a feltételezéseken változtatni, pl. a *Társadalmi érintekzések csökkenése (%)* paraméter megváltoztatásával módosul a járvány terjedési sebessége""")
 
-$$\\beta$$ can be interpreted as the _effective contact rate_:
-""")
-    st.latex("\\beta = \\tau \\times c")
-
-    st.markdown(
-"""which is the transmissibility ($\\tau$) multiplied by the average number of people exposed ($$c$$).  The transmissibility is the basic virulence of the pathogen.  The number of people exposed $c$ is the parameter that can be changed through social distancing.
-
-
-$\\gamma$ is the inverse of the mean recovery time, in days.  I.e.: if $\\gamma = 1/{recovery_days}$, then the average infection will clear in {recovery_days} days.
-
-An important descriptive parameter is the _basic reproduction number_, or $R_0$.  This represents the average number of people who will be infected by any given infected person.  When $R_0$ is greater than 1, it means that a disease will grow.  Higher $R_0$'s imply more rapid growth.  It is defined as """.format(recovery_days=int(recovery_days)    , c='c'))
-    st.latex("R_0 = \\beta /\\gamma")
-
-    st.markdown("""
-
-$R_0$ gets bigger when
-
-- there are more contacts between people
-- when the pathogen is more virulent
-- when people have the pathogen for longer periods of time
-
-A doubling time of {doubling_time} days and a recovery time of {recovery_days} days imply an $R_0$ of {r_naught:.2f}.
-
-#### Effect of social distancing
-
-After the beginning of the outbreak, actions to reduce social contact will lower the parameter $c$.  If this happens at
-time $t$, then the number of people infected by any given infected person is $R_t$, which will be lower than $R_0$.
-
-A {relative_contact_rate:.0%} reduction in social contact would increase the time it takes for the outbreak to double,
-to {doubling_time_t:.2f} days from {doubling_time:.2f} days, with a $R_t$ of {r_t:.2f}.
-
-#### Using the model
-
-We need to express the two parameters $\\beta$ and $\\gamma$ in terms of quantities we can estimate.
-
-- $\\gamma$:  the CDC is recommending 14 days of self-quarantine, we'll use $\\gamma = 1/{recovery_days}$.
-- To estimate $$\\beta$$ directly, we'd need to know transmissibility and social contact rates.  since we don't know these things, we can extract it from known _doubling times_.  The AHA says to expect a doubling time $T_d$ of 7-10 days. That means an early-phase rate of growth can be computed by using the doubling time formula:
-""".format(doubling_time=doubling_time,
-           recovery_days=recovery_days,
-           r_naught=r_naught,
-           relative_contact_rate=relative_contact_rate,
-           doubling_time_t=doubling_time_t,
-           r_t=r_t)
-    )
-    st.latex("g = 2^{1/T_d} - 1")
-
-    st.markdown(
-        """
-- Since the rate of new infections in the SIR model is $g = \\beta S - \\gamma$, and we've already computed $\\gamma$, $\\beta$ becomes a function of the initial population size of susceptible individuals.
-$$\\beta = (g + \\gamma)$$.
-
-
-### Initial Conditions
-
-- The total size of the susceptible population will be the entire catchment area for Penn Medicine entities (HUP, PAH, PMC, CCH)
-  - Delaware = {delaware}
-  - Chester = {chester}
-  - Montgomery = {montgomery}
-  - Bucks = {bucks}
-  - Philly = {philly}""".format(
-            delaware=delaware,
-            chester=chester,
-            montgomery=montgomery,
-            bucks=bucks,
-            philly=philly,
-        )
-    )
-    return None
-
-if st.checkbox("Show more info about this tool"):
-    show_more_info_about_this_tool()
+st.markdown(a)
 
 # The SIR model, one time step
 def sir(y, beta, gamma, N):
@@ -255,7 +174,7 @@ def sim_sir(S, I, R, beta, gamma, n_days, beta_decay=None):
     return s, i, r
 
 
-n_days = st.slider("Number of days to project", 30, 200, 60, 1, "%i")
+n_days = st.slider("Hány napot modellezzen", 30, 200, 90, 1, "%i")
 
 beta_decay = 0.0
 s, i, r = sim_sir(S, I, R, beta, gamma, n_days, beta_decay=beta_decay)
@@ -271,8 +190,8 @@ data_dict = dict(zip(["day", "hosp", "icu", "vent"], data_list))
 
 projection = pd.DataFrame.from_dict(data_dict)
 
-st.subheader("New Admissions")
-st.markdown("Projected number of **daily** COVID-19 admissions at Penn hospitals")
+st.subheader("Kózházi kezelésre felvettek")
+st.markdown("Az újonnan kórházi kezelésre szoroló betegek száma **naponta**")
 
 # New cases
 projection_admits = projection.iloc[:-1, :] - projection.shift(1)
@@ -284,15 +203,15 @@ projection_admits["day"] = range(projection_admits.shape[0])
 
 def new_admissions_chart(projection_admits: pd.DataFrame, plot_projection_days: int) -> alt.Chart:
     """docstring"""
-    projection_admits = projection_admits.rename(columns={"hosp": "Hospitalized", "icu": "ICU", "vent": "Ventilated"})
+    projection_admits = projection_admits.rename(columns={"hosp": "Kórházban kezelt", "icu": "Intenzív osztályon kezelt", "vent": "Lélegeztetett"})
     return (
         alt
         .Chart(projection_admits.head(plot_projection_days))
-        .transform_fold(fold=["Hospitalized", "ICU", "Ventilated"])
+        .transform_fold(fold=["Kórházban kezelt", "Intenzív osztályon kezelt", "Lélegeztetett"])
         .mark_line(point=True)
         .encode(
-            x=alt.X("day", title="Days from today"),
-            y=alt.Y("value:Q", title="Daily admissions"),
+            x=alt.X("day", title="Mostantól nap"),
+            y=alt.Y("value:Q", title="Naponta kórházi kezelésre szoroló új estetek"),
             color="key:N",
             tooltip=["day", "key:N"]
         )
@@ -303,17 +222,17 @@ st.altair_chart(new_admissions_chart(projection_admits, plot_projection_days), u
 
 
 
-if st.checkbox("Show Projected Admissions in tabular form"):
-    admits_table = projection_admits[np.mod(projection_admits.index, 7) == 0].copy()
-    admits_table["day"] = admits_table.index
-    admits_table.index = range(admits_table.shape[0])
-    admits_table = admits_table.fillna(0).astype(int)
+#if st.checkbox("Show Projected Admissions in tabular form"):
+#    admits_table = projection_admits[np.mod(projection_admits.index, 7) == 0].copy()
+#    admits_table["day"] = admits_table.index
+#    admits_table.index = range(admits_table.shape[0])
+#    admits_table = admits_table.fillna(0).astype(int)
 
-    st.dataframe(admits_table)
+#    st.dataframe(admits_table)
 
-st.subheader("Admitted Patients (Census)")
+st.subheader("Kórházi kezelésre szoruló betegek **összesen**")
 st.markdown(
-    "Projected **census** of COVID-19 patients, accounting for arrivals and discharges at Penn hospitals"
+    "Az összes kórházi ápolásra szoroló beteg száma, azaz a szükséges ágyak, intenzív helyek és lélegeztetőgépek száma"
 )
 
 def _census_table(projection_admits, hosp_los, icu_los, vent_los) -> pd.DataFrame:
@@ -349,16 +268,16 @@ census_table = _census_table(projection_admits, hosp_los, icu_los, vent_los)
 
 def admitted_patients_chart(census: pd.DataFrame) -> alt.Chart:
     """docstring"""
-    census = census.rename(columns={"hosp": "Hospital Census", "icu": "ICU Census", "vent": "Ventilated Census"})
+    census = census.rename(columns={"hosp": "Kórházban kezelt", "icu": "Intenzív osztályon kezelt", "vent": "Lélegeztetett"})
 
     return (
         alt
         .Chart(census)
-        .transform_fold(fold=["Hospital Census", "ICU Census", "Ventilated Census"])
+        .transform_fold(fold=["Kórházban kezelt", "Intenzív osztályon kezelt", "Lélegeztetett"])
         .mark_line(point=True)
         .encode(
-            x=alt.X("day", title="Days from today"),
-            y=alt.Y("value:Q", title="Census"),
+            x=alt.X("day", title="Mostantól nap"),
+            y=alt.Y("value:Q", title="Össz"),
             color="key:N",
             tooltip=["day", "key:N"]
         )
@@ -367,8 +286,8 @@ def admitted_patients_chart(census: pd.DataFrame) -> alt.Chart:
 
 st.altair_chart(admitted_patients_chart(census_table), use_container_width=True)
 
-if st.checkbox("Show Projected Census in tabular form"):
-    st.dataframe(census_table)
+#if st.checkbox("Show Projected Census in tabular form"):
+#    st.dataframe(census_table)
 
 def additional_projections_chart(i: np.ndarray, r: np.ndarray) -> alt.Chart:
     dat = pd.DataFrame({"Infected": i, "Recovered": r})
@@ -387,9 +306,9 @@ def additional_projections_chart(i: np.ndarray, r: np.ndarray) -> alt.Chart:
         .interactive()
     )
 
-st.markdown(
-    """**Click the checkbox below to view additional data generated by this simulation**"""
-)
+#st.markdown(
+#    """**Click the checkbox below to view additional data generated by this simulation**"""
+#)
 
 def show_additional_projections():
     st.subheader(
@@ -410,8 +329,8 @@ def show_additional_projections():
         st.dataframe(infect_table)
 
 
-if st.checkbox("Show Additional Projections"):
-    show_additional_projections()
+#if st.checkbox("Show Additional Projections"):
+#    show_additional_projections()
 
 
 # Definitions and footer
