@@ -29,7 +29,6 @@ a = """Mi változott az eredeti modellhez képest?
  - A lakosság száma módosítva lett
 
 """
-st.title('Koronavírusfertőzöttek ellátásához szükséges kórházi ágyak száma Magyarországon')
 
 # Widgets
 current_hosp = st.sidebar.number_input(
